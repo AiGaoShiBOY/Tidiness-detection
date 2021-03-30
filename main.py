@@ -21,25 +21,48 @@ from torch.nn import Linear, ReLU, CrossEntropyLoss, Sequential, Conv2d, MaxPool
 from torch.optim import Adam, SGD
 import torchvision.models as models
 
-import dataset
+
+import Dataset
 import my_model
 #加载数据集
-train_img, train_label = dataset.getTrain()
+train_img, train_label = Dataset.getTrain()
 train_label=torch.from_numpy(train_label)
-val_img, val_label = dataset.getVal()
+val_img, val_label = Dataset.getVal()
 val_label=torch.from_numpy(val_label)
-test_img = dataset.getTest()
+test_img = Dataset.getTest()
 
-model = models.resnet18(pretrained=False, num_classes=2)
+# 选取要使用的模型
 
-resnet18 = models.resnet18(pretrained=False)
-print(model)
+print("1--------2layer-Net")
+print("2--------Resnet18")
+print("3--------VGG16")
+print("4--------Resnet18 Finetune")
+key = input()
+
+if key == '2':
+    model = models.resnet18(pretrained=False, num_classes=2)
+    optimizer = Adam(model.parameters(), lr=1e-3)
+
+if key == '3':
+    model = models.vgg16(pretrained=False, num_classes=2)
+    optimizer = Adam(model.parameters(), lr=0.07)
+
+if key == '4':
+    model = models.resnet18(pretrained=True)
+    model.fc = Linear(in_features=512, out_features=2)
+    for para in list(model.parameters())[:-2]:
+        para.requires_grad = False
+    optimizer = SGD(params=model.parameters(), lr=0.01)
+    print('the training layer is:')
+    for name, param in model.named_parameters():  # 查看可优化的参数有哪些
+        if param.requires_grad:
+            print(name)
 
 
-# 定义优化器
-optimizer = Adam(model.parameters(), lr=0.07)#lr 学习率
+
 # 定义loss函数
 criterion = CrossEntropyLoss()
+
 # 检查GPU是否可用
 if torch.cuda.is_available():
     model0 = model.cuda()
@@ -48,13 +71,13 @@ if torch.cuda.is_available():
 
 train_losses = []
 val_losses = []
+
 def train(epoch):
     model.train()
     tr_loss = 0
     # 获取训练集
 
     img_train, label_train = Variable(train_img), Variable(train_label)
-    # 获取验证集
 
     img_val, label_val = Variable(val_img), Variable(val_label)
     # 转换为GPU格式
@@ -72,8 +95,8 @@ def train(epoch):
     output_val = model(img_val)
 
     # 计算训练集与验证集损失
-    label_val = torch.tensor(label_val, dtype=torch.long)
-    label_train = torch.tensor(label_train, dtype=torch.long)
+    # label_val = torch.tensor(label_val, dtype=torch.long)
+    # label_train = torch.tensor(label_train, dtype=torch.long)
     loss_train = criterion(output_train, label_train)
     loss_val = criterion(output_val, label_val)
     train_losses.append(loss_train)
@@ -83,11 +106,29 @@ def train(epoch):
     loss_train.backward()
     optimizer.step()
     tr_loss = loss_train.item()
-    if epoch % 2 == 0:
-        # 输出验证集loss
-        print('Epoch : ', epoch+1, '\t', 'loss :', loss_val)
+    # 输出验证集loss
+    train_correct = torch.zeros(1).squeeze()
+    train_total = torch.zeros(1).squeeze()
+    out = model(train_img)
+    pred = torch.argmax(out, 1)
+    train_correct += (pred == label_train).sum().float()
+    train_total += len(label_train)
+    train_acc_str = 'Train_Accuracy: %f' % ((train_correct / train_total).detach().data.numpy())
 
-n_epochs = 5
+    val_correct = torch.zeros(1).squeeze()
+    val_total = torch.zeros(1).squeeze()
+    out = model(val_img)
+    pred = torch.argmax(out, 1)
+    val_correct += (pred == label_val).sum().float()
+    val_total += len(label_val)
+    val_acc_str = 'Val_Accuracy: %f' % ((val_correct / val_total).detach().data.numpy())
+
+    print('Epoch : ', epoch + 1, '/', str(n_epochs), ' ', 'loss :', loss_val.data.numpy(), ' ', train_acc_str, ' ', val_acc_str)
+
+
+n_epochs = 50
+
+print("Start Training...")
 for epoch in range(n_epochs):
     train(epoch)
 
@@ -116,8 +157,9 @@ with torch.no_grad():
         output = model(val_img.cuda())
     else:
         output = model(val_img)
-softmax = torch.exp(output).cpu()
-prob = list(softmax.numpy())
+m = Softmax(dim=1)
+output = m(output)
+prob = list(output.numpy())
 predictions = np.argmax(prob, axis=1)
 # 验证集精度
 print(accuracy_score(val_label, predictions))

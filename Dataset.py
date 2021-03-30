@@ -21,9 +21,7 @@ from torch.autograd import Variable
 from torch.nn import Linear, ReLU, CrossEntropyLoss, Sequential, Conv2d, MaxPool2d, Module, Softmax, BatchNorm2d, Dropout
 from torch.optim import Adam, SGD
 
-#文件测试路径
-#D:/messy-vs-clean-room/images/test/xxx.png
-#训练集加载
+
 train_img = []
 
 my_route = "/Users/liyuanfeng/Desktop/计算机视觉/messy-vs-clean-room/images/"
@@ -32,7 +30,9 @@ for img_num in range(0,96):
     # 定义图像路径
     image_path = my_route+'train/clean/'+str(img_num) + '.png'
     # 读取图片
-    img = imread(image_path)
+    img = Image.open(image_path)
+    img = img.resize((224, 224), Image.BICUBIC)
+    img = np.array(img)
     # 转换为浮点数
     img = img.astype('float32')
     # img /= 255.0
@@ -41,7 +41,9 @@ for img_num in range(0,96):
 
 for img_num in range(0,96):
     image_path = my_route + 'train/messy/' +str(img_num) + '.png'
-    img = imread(image_path)
+    img = Image.open(image_path)
+    img = img.resize((224, 224), Image.BICUBIC)
+    img = np.array(img)
     # img /= 255.0
     img = img.astype('float32')
     train_img.append(img)
@@ -74,13 +76,17 @@ plt.show()
 val_img=[]
 for img_num in range(0,10):
     image_path = my_route+'val/clean/'+str(img_num) + '.png'
-    img = imread(image_path)
+    img = Image.open(image_path)
+    img = img.resize((224, 224), Image.BICUBIC)
+    img = np.array(img)
     # img /= 255.0
     img = img.astype('float32')
     val_img.append(img)
 for img_num in range(0,10):
     image_path = my_route+'val/messy/'+str(img_num) + '.png'
-    img = imread(image_path)
+    img = Image.open(image_path)
+    img = img.resize((224, 224), Image.BICUBIC)
+    img = np.array(img)
     # img /= 255.0
     img = img.astype('float32')
     val_img.append(img)
@@ -96,7 +102,9 @@ val_lable=np.array(val_lable)
 test_img=[]
 for img_num in range(0,10):
     image_path = my_route+'test/'+str(img_num) + '.png'
-    img = imread(image_path)
+    img = Image.open(image_path)
+    img = img.resize((224, 224), Image.BICUBIC)
+    img = np.array(img)
     # img /= 255.0
     img = img.astype('float32')
     test_img.append(img)
@@ -104,7 +112,7 @@ test_img = np.array(test_img)
 
 
 
-train_img = train_img.reshape(192, 3, 299, 299)
+train_img = train_img.reshape(192, 3, 224, 224)
 train_img = torch.from_numpy(train_img)
 
 # 转换为torch张量
@@ -112,14 +120,14 @@ train_label = train_lable.astype(int)
 train_label = torch.from_numpy(train_label)
 
 # 转换为torch张量
-val_img = val_img.reshape(20, 3, 299, 299)
+val_img = val_img.reshape(20, 3, 224, 224)
 val_img = torch.from_numpy(val_img)
 
 # 转换为torch张量
 val_label = val_lable.astype(int)
 val_label = torch.from_numpy(val_label)
 
-test_img = test_img.reshape(10, 3, 299, 299)
+test_img = test_img.reshape(10, 3, 224, 224)
 test_img = torch.from_numpy(test_img)
 
 print(test_img.shape)
