@@ -3,6 +3,15 @@ This is a simple network for tidiness detection.
 # You need to install
 * Pytorch
 * PIL
+# Available functions
+* resnet18
+* resnet18-finetune(with SGD)
+When you see 
+> 1--------2layer-Net
+> 2--------Resnet18
+> 3--------VGG16
+> 4--------Resnet18 Finetune
+Please type 2 or 4!!!😂
 # Update History
-* 2020.3.27 A 2-layer CNN. Loss: 7
-* 2020.3.30 Resnet18. Loss: 0.8
+* 2020.3.27 A 2-layer CNN. Acc:0.7
+* 2020.3.30 Resnet18-Finetune: Acc:0.9
