@@ -87,7 +87,7 @@ def train(epoch):
         # 输出验证集loss
         print('Epoch : ', epoch+1, '\t', 'loss :', loss_val)
 
-n_epochs = 25
+n_epochs = 5
 for epoch in range(n_epochs):
     train(epoch)
 
@@ -99,7 +99,10 @@ plt.show()
 
 #训练集预测
 with torch.no_grad():
-    output = model(train_img.cuda())
+    if torch.cuda.is_available():
+        output = model(train_img.cuda())
+    else:
+        output = model(train_img)
 softmax = torch.exp(output).cpu()
 prob = list(softmax.numpy())
 predictions = np.argmax(prob, axis=1)
@@ -109,7 +112,10 @@ print(accuracy_score(train_label, predictions))
 
 # 验证集预测
 with torch.no_grad():
-    output = model(val_img.cuda())
+    if torch.cuda.is_available():
+        output = model(val_img.cuda())
+    else:
+        output = model(val_img)
 softmax = torch.exp(output).cpu()
 prob = list(softmax.numpy())
 predictions = np.argmax(prob, axis=1)
@@ -118,8 +124,10 @@ print(accuracy_score(val_label, predictions))
 
 # 生成测试集预测
 with torch.no_grad():
-    output = model(test_img.cuda())
-
+    if torch.cuda.is_available():
+        output = model(test_img.cuda())
+    else:
+        output = model(test_img)
 softmax = torch.exp(output).cpu()
 prob = list(softmax.numpy())
 predictions = np.argmax(prob, axis=1)
