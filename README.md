@@ -1,12 +1,12 @@
 # Tidiness Detction Network
 This is a simple network for tidiness detection.
-# How to start?
+# How To Start
 * You need to install
 > * Pytorch
 > * PIL
 * modify my_route to your own dataset route in `Dataset.py` and `DatasetFor5layer.py`
 * run `main.py`.
-# Available functions
+# Available Net
 * 5-layer-CNN 
 * Resnet18
 * FC-Finetune Resnet18
@@ -17,7 +17,7 @@ When you run `main.py`, you can see :
   3--------VGG16<br>
   4--------FC-Finetune Pretrained Resnet18
 
-Input corresponding number to choose Net.
+Input corresponding number to choose Net🐵🐵🐵.
 
 # Update History
 * 2020.3.27 A 5-layer CNN. Val-Acc:0.65
