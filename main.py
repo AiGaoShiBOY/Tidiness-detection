@@ -31,7 +31,7 @@ import my_model
 
 print("1--------5-layer-CNN")
 print("2--------Resnet18")
-print("3--------Resnet18 Finetune")
+print("3--------FC-Finetune Pretrained Resnet18")
 key = input()
 
 if key == '1':
