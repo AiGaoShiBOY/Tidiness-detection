@@ -14,8 +14,7 @@ This is a simple network for tidiness detection.
 When you run `main.py`, you can see :
 > 1--------2layer-Net<br>
   2--------Resnet18<br>
-  3--------VGG16<br>
-  4--------FC-Finetune Pretrained Resnet18
+  3--------FC-Finetune Pretrained Resnet18
 
 Input corresponding number to choose Net🐵🐵🐵.
 
