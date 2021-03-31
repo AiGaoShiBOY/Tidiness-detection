@@ -20,39 +20,50 @@ from torch.autograd import Variable
 from torch.nn import Linear, ReLU, CrossEntropyLoss, Sequential, Conv2d, MaxPool2d, Module, Softmax, BatchNorm2d, Dropout
 from torch.optim import Adam, SGD
 import torchvision.models as models
-
+import time
 
 import Dataset
+import DatasetFor5layer
 import my_model
-#加载数据集
-train_img, train_label = Dataset.getTrain()
-train_label=torch.from_numpy(train_label)
-val_img, val_label = Dataset.getVal()
-val_label=torch.from_numpy(val_label)
-test_img = Dataset.getTest()
+
 
 # 选取要使用的模型
 
-print("1--------2layer-Net")
+print("1--------5-layer-CNN")
 print("2--------Resnet18")
-print("3--------VGG16")
-print("4--------Resnet18 Finetune")
+print("3--------Resnet18 Finetune")
 key = input()
 
+if key == '1':
+    train_img, train_label = DatasetFor5layer.getTrain()
+    train_label = torch.from_numpy(train_label)
+    val_img, val_label = DatasetFor5layer.getVal()
+    val_label = torch.from_numpy(val_label)
+    test_img = DatasetFor5layer.getTest()
+    model = my_model.Net()
+    optimizer = Adam(model.parameters(), lr=1e-3)
+
 if key == '2':
+    train_img, train_label = Dataset.getTrain()
+    train_label = torch.from_numpy(train_label)
+    val_img, val_label = Dataset.getVal()
+    val_label = torch.from_numpy(val_label)
+    test_img = Dataset.getTest()
     model = models.resnet18(pretrained=False, num_classes=2)
     optimizer = Adam(model.parameters(), lr=1e-3)
 
-if key == '3':
-    model = models.vgg16(pretrained=False, num_classes=2)
-    optimizer = Adam(model.parameters(), lr=0.07)
 
-if key == '4':
+if key == '3':
+    train_img, train_label = Dataset.getTrain()
+    train_label = torch.from_numpy(train_label)
+    val_img, val_label = Dataset.getVal()
+    val_label = torch.from_numpy(val_label)
+    test_img = Dataset.getTest()
     model = models.resnet18(pretrained=True)
     model.fc = Linear(in_features=512, out_features=2)
     for para in list(model.parameters())[:-2]:
         para.requires_grad = False
-    optimizer = SGD(params=model.parameters(), lr=0.01)
+    optimizer = Adam(params=[model.fc.weight, model.fc.bias], lr=1e-3)
     print('the training layer is:')
     for name, param in model.named_parameters():  # 查看可优化的参数有哪些
         if param.requires_grad:
@@ -71,6 +82,9 @@ if torch.cuda.is_available():
 
 train_losses = []
 val_losses = []
+
+T_accs = []
+Val_accs = []
 
 def train(epoch):
     model.train()
@@ -113,6 +127,8 @@ def train(epoch):
     pred = torch.argmax(out, 1)
     train_correct += (pred == label_train).sum().float()
     train_total += len(label_train)
+    train_acc = (train_correct / train_total).detach().data.numpy()
+    T_accs.append(train_acc)
     train_acc_str = 'Train_Accuracy: %f' % ((train_correct / train_total).detach().data.numpy())
 
     val_correct = torch.zeros(1).squeeze()
@@ -121,22 +137,41 @@ def train(epoch):
     pred = torch.argmax(out, 1)
     val_correct += (pred == label_val).sum().float()
     val_total += len(label_val)
+    val_acc = (val_correct / val_total).detach().data.numpy()
+    Val_accs.append(val_acc)
     val_acc_str = 'Val_Accuracy: %f' % ((val_correct / val_total).detach().data.numpy())
 
     print('Epoch : ', epoch + 1, '/', str(n_epochs), ' ', 'loss :', loss_val.data.numpy(), ' ', train_acc_str, ' ', val_acc_str)
 
 
-n_epochs = 50
+n_epochs = 100
+
 
 print("Start Training...")
+t0 = time.time()
+
 for epoch in range(n_epochs):
     train(epoch)
+
+t1 = time.time()
+
+print('Training Complete.')
+print('Time cost:', t1-t0, 's')
 
 # 画出loss曲线
 plt.plot(train_losses, label='Training loss')
 plt.plot(val_losses, label='Validation loss')
 plt.legend()
+plt.title('loss')
 plt.show()
+
+# 画出Acc曲线
+plt.plot(T_accs, label='Training Accuracy')
+plt.plot(Val_accs, label='Validation Accuracy')
+plt.title('Accuracy')
+plt.legend()
+plt.show()
+
 
 #训练集预测
 with torch.no_grad():
@@ -173,7 +208,7 @@ with torch.no_grad():
 softmax = torch.exp(output).cpu()
 prob = list(softmax.numpy())
 predictions = np.argmax(prob, axis=1)
-print(predictions)
+print('The prediction of test is', predictions)
 
 
 
