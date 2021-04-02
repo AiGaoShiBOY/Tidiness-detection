@@ -1,30 +1,22 @@
-import pandas as pd
-import numpy as np
+import time
 
 # 读取与展示图片
-from skimage.io import imread
-from PIL import Image
 import matplotlib.pyplot as plt
-import imageio
-
-# 创建验证集
-from sklearn.model_selection import train_test_split
-
-# 评估模型
-from sklearn.metrics import accuracy_score
-from tqdm import tqdm
-
+import numpy as np
 # Pytorch的相关库
 import torch
-from torch.autograd import Variable
-from torch.nn import Linear, ReLU, CrossEntropyLoss, Sequential, Conv2d, MaxPool2d, Module, Softmax, BatchNorm2d, Dropout
-from torch.optim import Adam, SGD
 import torchvision.models as models
-import time
+# 评估模型
+from sklearn.metrics import accuracy_score
+from torch.autograd import Variable
+from torch.nn import Linear, CrossEntropyLoss, Softmax
+from torch.optim import Adam,SGD
 
 import Dataset
 import DatasetFor5layer
 import my_model
+
+# 创建验证集
 
 
 # 选取要使用的模型
@@ -50,7 +42,7 @@ if key == '2':
     val_label = torch.from_numpy(val_label)
     test_img = Dataset.getTest()
     model = models.resnet18(pretrained=False, num_classes=2)
-    optimizer = Adam(model.parameters(), lr=1e-3)
+    optimizer = SGD(model.parameters(), lr=1e-2)
 
 
 if key == '3':
@@ -88,7 +80,6 @@ Val_accs = []
 
 def train(epoch):
     model.train()
-    tr_loss = 0
     # 获取训练集
 
     img_train, label_train = Variable(train_img), Variable(train_label)
