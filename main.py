@@ -24,6 +24,7 @@ import my_model
 print("1--------5-layer-CNN")
 print("2--------Resnet18")
 print("3--------FC-Finetune Pretrained Resnet18")
+print("torch ",torch.__version__)
 key = input()
 
 if key == '1':
@@ -100,8 +101,8 @@ def train(epoch):
     output_val = model(img_val)
 
     # 计算训练集与验证集损失
-    # label_val = torch.tensor(label_val, dtype=torch.long)
-    # label_train = torch.tensor(label_train, dtype=torch.long)
+    label_val = torch.tensor(label_val, dtype=torch.long)
+    label_train = torch.tensor(label_train, dtype=torch.long)
     loss_train = criterion(output_train, label_train)
     loss_val = criterion(output_val, label_val)
     train_losses.append(loss_train)
@@ -112,30 +113,34 @@ def train(epoch):
     optimizer.step()
     tr_loss = loss_train.item()
     # 输出验证集loss
+
     train_correct = torch.zeros(1).squeeze()
     train_total = torch.zeros(1).squeeze()
-    out = model(train_img)
+    out = model(img_train)
     pred = torch.argmax(out, 1)
+    pred = pred.cuda()
+    train_correct = train_correct.cuda()
     train_correct += (pred == label_train).sum().float()
     train_total += len(label_train)
-    train_acc = (train_correct / train_total).detach().data.numpy()
+    train_acc = (train_correct / train_total).detach().data.cpu().numpy()
     T_accs.append(train_acc)
-    train_acc_str = 'Train_Accuracy: %f' % ((train_correct / train_total).detach().data.numpy())
+    train_acc_str = 'Train_Accuracy: %f' % ((train_correct / train_total).detach().data.cpu().numpy())
 
     val_correct = torch.zeros(1).squeeze()
     val_total = torch.zeros(1).squeeze()
-    out = model(val_img)
-    pred = torch.argmax(out, 1)
+    out = model(img_val)
+    pred = torch.argmax(out, 1).cuda()
+    val_correct = val_correct.cuda()
     val_correct += (pred == label_val).sum().float()
     val_total += len(label_val)
-    val_acc = (val_correct / val_total).detach().data.numpy()
+    val_acc = (val_correct / val_total).detach().data.cpu().numpy()
     Val_accs.append(val_acc)
-    val_acc_str = 'Val_Accuracy: %f' % ((val_correct / val_total).detach().data.numpy())
+    val_acc_str = 'Val_Accuracy: %f' % ((val_correct / val_total).detach().data.cpu().numpy())
 
-    print('Epoch : ', epoch + 1, '/', str(n_epochs), ' ', 'loss :', loss_val.data.numpy(), ' ', train_acc_str, ' ', val_acc_str)
+    print('Epoch : ', epoch + 1, '/', str(n_epochs), ' ', 'loss :', loss_val.data.cpu().numpy(), ' ', train_acc_str, ' ', val_acc_str)
 
 
-n_epochs = 100
+n_epochs = 200
 
 
 print("Start Training...")
@@ -166,41 +171,27 @@ plt.show()
 
 #训练集预测
 with torch.no_grad():
-    if torch.cuda.is_available():
-        output = model(train_img.cuda())
-    else:
-        output = model(train_img)
+    output = model(train_img.cuda())
 softmax = torch.exp(output).cpu()
 prob = list(softmax.numpy())
 predictions = np.argmax(prob, axis=1)
 # 训练集精度
-print(accuracy_score(train_label, predictions))
-
-
+a=accuracy_score(train_label, predictions)
+print("训练集准确率",a)
 # 验证集预测
 with torch.no_grad():
-    if torch.cuda.is_available():
-        output = model(val_img.cuda())
-    else:
-        output = model(val_img)
-m = Softmax(dim=1)
-output = m(output)
-prob = list(output.numpy())
-predictions = np.argmax(prob, axis=1)
-# 验证集精度
-print(accuracy_score(val_label, predictions))
-
-# 生成测试集预测
-with torch.no_grad():
-    if torch.cuda.is_available():
-        output = model(test_img.cuda())
-    else:
-        output = model(test_img)
+    output = model(val_img.cuda())
 softmax = torch.exp(output).cpu()
 prob = list(softmax.numpy())
 predictions = np.argmax(prob, axis=1)
-print('The prediction of test is', predictions)
+# 验证集精度
+b=accuracy_score(val_label, predictions)
+print("验证集准确率",b)
+# 生成测试集预测
+with torch.no_grad():
+    output = model(test_img.cuda())
 
-
-
-
+softmax = torch.exp(output).cpu()
+prob = list(softmax.numpy())
+predictions = np.argmax(prob, axis=1)
+print(predictions)
